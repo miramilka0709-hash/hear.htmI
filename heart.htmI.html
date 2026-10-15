@@ -1,0 +1,152 @@
+index.thmI
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Glowing Heart Love You</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background-color: #030611;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      width: 100vw;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="heartCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("heartCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    window.addEventListener("resize", () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    const PHRASES = ["LOVE YOU", "love you", "Love You", "I love you"];
+    const TOTAL_PARTICLES = 320;
+    const particles = [];
+
+    // Параметрическое уравнение формы сердца
+    function getHeartPoint(t, scale = 16) {
+      const x = scale * 16 * Math.pow(Math.sin(t), 3);
+      const y =
+        -scale *
+        (13 * Math.cos(t) -
+          5 * Math.cos(2 * t) -
+          2 * Math.cos(3 * t) -
+          Math.cos(4 * t));
+      return { x, y };
+    }
+
+    class TextParticle {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        // Угол вдоль контура сердца
+        this.t = Math.random() * Math.PI * 2;
+        
+        // Распределение: часть на контуре, часть внутри с заполнением
+        const r = Math.pow(Math.random(), 0.6);
+        this.distScale = 0.2 + 0.85 * r;
+
+        this.text = PHRASES[Math.floor(Math.random() * PHRASES.length)];
+        this.fontSize = Math.floor(10 + Math.random() * 14);
+
+        // Индивидуальная скорость мерцания и смещения
+        this.speed = 0.003 + Math.random() * 0.007;
+        this.direction = Math.random() > 0.5 ? 1 : -1;
+
+        // Неоново-голубая палитра
+        this.hue = 190 + Math.random() * 25; // диапазон cyan / sky blue
+        this.baseAlpha = 0.35 + Math.random() * 0.65;
+        this.alpha = this.baseAlpha;
+        this.alphaSpeed = 0.02 + Math.random() * 0.03;
+
+        // Лёгкий дрейф от идеальной траектории
+        this.noiseX = (Math.random() - 0.5) * 20;
+        this.noiseY = (Math.random() - 0.5) * 20;
+      }
+
+      update(beatScale) {
+        this.t += this.speed * this.direction;
+
+        // Плавное мерцание прозрачности
+        this.alpha += this.alphaSpeed;
+        if (this.alpha > 1 || this.alpha < 0.2) {
+          this.alphaSpeed = -this.alphaSpeed;
+        }
+
+        const point = getHeartPoint(this.t, beatScale * this.distScale);
+        this.x = width / 2 + point.x + this.noiseX;
+        this.y = height / 2 + point.y + this.noiseY;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.font = `600 ${this.fontSize}px 'Segoe UI', Roboto, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        // Эффект неонового свечения
+        ctx.shadowColor = `hsla(${this.hue}, 100%, 70%, ${this.alpha})`;
+        ctx.shadowBlur = 12;
+
+        ctx.fillStyle = `hsla(${this.hue}, 95%, 75%, ${this.alpha})`;
+        ctx.fillText(this.text, this.x, this.y);
+
+        ctx.restore();
+      }
+    }
+
+    for (let i = 0; i < TOTAL_PARTICLES; i++) {
+      particles.push(new TextParticle());
+    }
+
+    let pulseTime = 0;
+
+    function animate() {
+      // Плавное затухание для шлейфа
+      ctx.fillStyle = "rgba(2, 6, 17, 0.28)";
+      ctx.fillRect(0, 0, width, height);
+
+      pulseTime += 0.045;
+      
+      // Имитация ритма биения сердца (двойной толчок)
+      const pulse =
+        Math.pow(Math.sin(pulseTime), 10) * 0.8 +
+        Math.pow(Math.sin(pulseTime + 0.35), 6) * 0.4;
+      
+      const currentScale = 14 + pulse * 2.8;
+
+      particles.forEach((p) => {
+        p.update(currentScale);
+        p.draw();
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html
